@@ -1,45 +1,45 @@
-# Gestor de Patrimonio Neto
+# Net Worth Manager
 
-Dashboard web sencillo para registrar y consultar el patrimonio neto personal. Permite gestionar activos y deudas, consultar la evolución histórica y guardar copias de seguridad localmente o en un GitHub Gist.
+Simple web dashboard for tracking and reviewing personal net worth. It allows you to manage assets and liabilities, view historical progress, and store backups locally or in a GitHub Gist.
 
-![Captura de ejemplo del dashboard](docs/app_1.png)
+![Dashboard example](docs/app_1.png)
 
-## Funcionalidades
+## Features
 
-- Registro de activos y pasivos con nombre, categoría y valor.
-- Cálculo automático del total de activos, deudas y patrimonio neto.
-- Gráfico de evolución mensual del patrimonio.
-- Gráfico de distribución de activos por categoría.
-- Edición y eliminación de registros.
-- Persistencia local mediante `localStorage`.
-- Exportación e importación de copias de seguridad en formato JSON.
-- Sincronización opcional con un GitHub Gist privado o público.
-- Interfaz adaptable para escritorio y móvil.
+- Track assets and liabilities with a name, category, and value.
+- Automatically calculate total assets, liabilities, and net worth.
+- View a monthly net worth history chart.
+- View asset distribution by category.
+- Edit and delete records.
+- Store data locally using `localStorage`.
+- Export and import JSON backups.
+- Optionally synchronize data with a public or secret GitHub Gist.
+- Responsive interface for desktop and mobile.
 
-## Tecnologías
+## Technologies
 
-- HTML, CSS y JavaScript vanilla.
-- Tailwind CSS mediante CDN.
-- Chart.js mediante CDN.
-- GitHub Gists API para la sincronización opcional.
+- HTML, CSS, and vanilla JavaScript.
+- Tailwind CSS loaded through a CDN.
+- Chart.js loaded through a CDN.
+- GitHub Gists API for optional synchronization.
 
-No hay servidor propio ni base de datos. La aplicación puede ejecutarse como una página estática.
+There is no custom server or database. The application can run as a static web page.
 
-## Uso local
+## Local Usage
 
-Abre `index.html` en el navegador. La aplicación necesita conexión a Internet para cargar Tailwind CSS, Font Awesome, Chart.js y las fuentes externas.
+Open `index.html` in your browser. The application needs an Internet connection to load Tailwind CSS, Font Awesome, Chart.js, and the external fonts.
 
-Los datos se guardan automáticamente en el almacenamiento local del navegador. Por eso, al borrar los datos del navegador o cambiar de dispositivo, los datos locales no estarán disponibles. Usa **Exportar** para crear una copia de seguridad.
+Data is saved automatically in the browser's local storage. Therefore, clearing browser data or switching devices will make the local data unavailable. Use **Export** to create a backup.
 
-## Copias de seguridad
+## Backups
 
-### Exportar
+### Export
 
-Pulsa **Exportar** para descargar un archivo con todos los activos, pasivos e historiales actuales. El archivo se genera como JSON y puede guardarse en un lugar seguro.
+Click **Export** to download a file containing all current assets, liabilities, and history entries. The file is generated as JSON and can be stored in a secure location.
 
-### Importar
+### Import
 
-Pulsa **Importar** y selecciona un archivo JSON exportado previamente. El contenido debe tener esta estructura mínima:
+Click **Import** and select a previously exported JSON file. The content must have this minimum structure:
 
 ```json
 {
@@ -48,18 +48,18 @@ Pulsa **Importar** y selecciona un archivo JSON exportado previamente. El conten
 }
 ```
 
-La importación reemplaza los datos que están cargados actualmente en la aplicación.
+Importing a file replaces the data currently loaded in the application.
 
-## Sincronización con GitHub Gist
+## GitHub Gist Synchronization
 
-La sincronización es opcional. Cuando está configurada, la aplicación lee y actualiza el archivo `patrimonio.json` dentro del Gist.
+Synchronization is optional. Once configured, the application reads and updates the `patrimonio.json` file inside the Gist.
 
-### Crear el Gist desde cero
+### Create a Gist from scratch
 
-1. Inicia sesión en [GitHub](https://github.com/).
-2. Abre [Crear un nuevo Gist](https://gist.github.com/).
-3. En el nombre del archivo escribe exactamente `patrimonio.json`.
-4. Introduce un JSON inicial válido, por ejemplo:
+1. Sign in to [GitHub](https://github.com/).
+2. Open [Create a new Gist](https://gist.github.com/).
+3. Enter exactly `patrimonio.json` as the filename.
+4. Enter valid initial JSON, for example:
 
    ```json
    {
@@ -68,54 +68,54 @@ La sincronización es opcional. Cuando está configurada, la aplicación lee y a
    }
    ```
 
-5. Elige **Create secret gist** para que el Gist no aparezca públicamente en las búsquedas.
-6. Pulsa **Create secret gist**.
-7. Copia el identificador del Gist. Es la última parte de su URL:
+5. Choose **Create secret gist** so the Gist does not appear in public searches.
+6. Click **Create secret gist**.
+7. Copy the Gist ID. It is the last part of its URL:
 
    ```text
    https://gist.github.com/usuario/0123456789abcdef
    																		^^^^^^^^^^^^^^^^
-   																		Gist ID
+                                      Gist ID
    ```
 
-### Crear el token de GitHub
+### Create a GitHub token
 
-La aplicación necesita un token personal para leer y modificar el Gist.
+The application needs a personal access token to read and modify the Gist.
 
-1. En GitHub, abre **Settings**.
-2. Ve a **Developer settings**.
-3. Entra en **Personal access tokens**.
-4. Puedes crear un token clásico con el permiso `gist`, o un token de permisos detallados con acceso de lectura y escritura para Gists.
-5. Define una fecha de expiración razonable y genera el token.
-6. Copia el token inmediatamente. GitHub no volverá a mostrarlo completo.
+1. In GitHub, open **Settings**.
+2. Go to **Developer settings**.
+3. Open **Personal access tokens**.
+4. You can create a classic token with the `gist` scope, or a fine-grained token with read and write access to Gists.
+5. Set a reasonable expiration date and generate the token.
+6. Copy the token immediately. GitHub will not show the full token again.
 
-No compartas el token ni lo guardes en el repositorio.
+Do not share the token or store it in the repository.
 
-### Configurar la aplicación
+### Configure the application
 
-1. En el dashboard, pulsa el botón de configuración de sincronización con el icono de nube.
-2. Introduce el **Gist ID**.
-3. Introduce el **GitHub Token**.
-4. Pulsa **Probar conexión**.
-5. Si la prueba es correcta, pulsa **Guardar**.
+1. In the dashboard, click the synchronization settings button with the cloud icon.
+2. Enter the **Gist ID**.
+3. Enter the **GitHub Token**.
+4. Click **Test connection**.
+5. If the test succeeds, click **Save**.
 
-Después de guardar, la aplicación descargará los datos del Gist. Los cambios posteriores se guardarán localmente y se enviarán al Gist cuando haya conexión.
+After saving, the application downloads the data from the Gist. Later changes are saved locally and sent to the Gist when a connection is available.
 
-### Seguridad y limitaciones
+### Security and limitations
 
-- El token se guarda sin cifrar en `localStorage` en el dispositivo actual.
-- No uses esta aplicación en un ordenador compartido si vas a configurar un token personal.
-- Revoca el token desde GitHub si el dispositivo se pierde o el token queda expuesto.
-- Un Gist secreto no es un mecanismo de cifrado: cualquiera que tenga su URL y autorización suficiente podría acceder a él.
-- La sincronización no sustituye a las copias de seguridad exportadas.
+- The token is stored unencrypted in `localStorage` on the current device.
+- Do not use this application on a shared computer if you configure a personal token.
+- Revoke the token from GitHub if the device is lost or the token is exposed.
+- A secret Gist is not encryption: anyone with its URL and sufficient authorization could access it.
+- Synchronization does not replace exported backups.
 
-## Desconectar la sincronización
+## Disconnect synchronization
 
-Abre la configuración de sincronización y pulsa **Desconectar**. Esto elimina las credenciales guardadas en el navegador, pero no borra el Gist ni los datos locales.
+Open the synchronization settings and click **Disconnect**. This removes the credentials stored in the browser, but does not delete the Gist or local data.
 
-## Reiniciar los datos
+## Reset the data
 
-El botón de papelera elimina los datos actuales del almacenamiento local y restaura los datos de ejemplo incluidos en la aplicación.
+The trash button deletes the current data from local storage and restores the sample data included in the application.
 
 ## TODO
 

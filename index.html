@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Patrimonio Neto</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased">
+
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-500/10 p-2 rounded-xl text-emerald-400 border border-emerald-500/20">
+                    <i class="fa-solid fa-chart-line text-xl"></i>
+                </div>
+                <h1 class="font-bold text-lg sm:text-xl tracking-tight text-white">Patrimonio<span class="text-emerald-400">Neto</span></h1>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center space-x-2">
+                <div id="syncStatus" class="flex items-center gap-2 px-2 text-xs text-slate-400" role="status" aria-live="polite" title="Datos guardados solo en este dispositivo">
+                    <span id="syncStatusDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+                    <span id="syncStatusText" class="hidden sm:inline">Solo local</span>
+                </div>
+                <button type="button" onclick="openSyncSettings()" title="Configurar sincronización" class="p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition-colors duration-150">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </button>
+                <button onclick="exportData()" title="Exportar Copia de Seguridad" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm font-medium rounded-lg transition-colors duration-150 flex items-center gap-2 border border-slate-700">
+                    <i class="fa-solid fa-download"></i>
+                    <span class="hidden sm:inline">Exportar</span>
+                </button>
+                <label title="Importar Copia de Seguridad" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm font-medium rounded-lg transition-colors duration-150 cursor-pointer flex items-center gap-2 border border-slate-700">
+                    <i class="fa-solid fa-upload"></i>
+                    <span class="hidden sm:inline">Importar</span>
+                    <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
+                </label>
+                <button onclick="resetDataPrompt()" title="Reiniciar Datos" class="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors duration-150">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow space-y-8">
+
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            <!-- Net Worth Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-lg">
+                <div class="absolute -right-4 -bottom-4 opacity-5 text-emerald-400 text-8xl">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Patrimonio Neto Total</p>
+                <h2 id="kpiNetWorth" class="text-3xl sm:text-4xl font-extrabold text-white mt-2 tracking-tight">€0,00</h2>
+                <span id="kpiNetWorthSub" class="text-xs font-medium text-emerald-400 inline-block mt-2 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                    Balance Global
+                </span>
+            </div>
+
+            <!-- Assets Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-lg">
+                <div class="absolute -right-4 -bottom-4 opacity-5 text-blue-400 text-8xl">
+                    <i class="fa-solid fa-arrow-trend-up"></i>
+                </div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Activos</p>
+                <h2 id="kpiAssets" class="text-3xl sm:text-4xl font-extrabold text-blue-400 mt-2 tracking-tight">€0,00</h2>
+                <span id="kpiAssetsCount" class="text-xs font-medium text-slate-400 inline-block mt-2">0 ítems registrados</span>
+            </div>
+
+            <!-- Liabilities Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-lg">
+                <div class="absolute -right-4 -bottom-4 opacity-5 text-rose-400 text-8xl">
+                    <i class="fa-solid fa-arrow-trend-down"></i>
+                </div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Pasivos (Deudas)</p>
+                <h2 id="kpiLiabilities" class="text-3xl sm:text-4xl font-extrabold text-rose-400 mt-2 tracking-tight">€0,00</h2>
+                <span id="kpiLiabilitiesCount" class="text-xs font-medium text-slate-400 inline-block mt-2">0 deudas registradas</span>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Line Chart: Evolution over time -->
+            <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line text-emerald-400"></i> Evolución Temporal
+                            </h3>
+                            <p class="text-xs text-slate-400">Historial del patrimonio neto guardado mes a mes</p>
+                        </div>
+                        <button onclick="saveCurrentSnapshot()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-md transition-all flex items-center gap-1.5">
+                            <i class="fa-solid fa-camera"></i> Guardar Mes Actual
+                        </button>
+                    </div>
+                    <div class="relative w-full h-64 sm:h-72">
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 mt-4 text-center italic">* Haz clic en "Guardar Mes Actual" para registrar la cifra de este mes en la gráfica de evolución.</p>
+            </div>
+
+            <!-- Donut Chart: Category distribution -->
+            <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg flex flex-col justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-blue-400"></i> Distribución de Activos
+                    </h3>
+                    <p class="text-xs text-slate-400 mb-4">Reparto porcentual por tipo de bien</p>
+                    <div class="relative w-full h-64 sm:h-72 flex items-center justify-center">
+                        <canvas id="donutChart"></canvas>
+                    </div>
+                </div>
+                <div id="donutEmptyState" class="hidden text-center text-xs text-slate-500 mt-2">
+                    Añade activos para ver la distribución visual.
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Item Form (Add / Edit) -->
+            <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg h-fit sticky top-20">
+                <h3 id="formTitle" class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-plus text-emerald-400"></i> Añadir Elemento
+                </h3>
+
+                <form id="itemForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                    <input type="hidden" id="itemId">
+
+                    <!-- Type Selector -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Tipo</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" id="btnAsset" onclick="setType('asset')" class="py-2 px-3 text-xs font-semibold rounded-lg border border-slate-700 bg-emerald-500/20 text-emerald-400 border-emerald-500/50 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-plus-circle"></i> Activo
+                            </button>
+                            <button type="button" id="btnLiability" onclick="setType('liability')" class="py-2 px-3 text-xs font-semibold rounded-lg border border-slate-700 bg-slate-800 text-slate-400 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-minus-circle"></i> Pasivo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Name -->
+                    <div>
+                        <label for="itemName" class="block text-xs font-medium text-slate-300 mb-1">Nombre / Concepto</label>
+                        <input type="text" id="itemName" required placeholder="Ej. Banco Principal, Hipoteca, Bitcoin..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+
+                    <!-- Category -->
+                    <div>
+                        <label for="itemCategory" class="block text-xs font-medium text-slate-300 mb-1">Categoría</label>
+                        <select id="itemCategory" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            <!-- Populated dynamically based on type -->
+                        </select>
+                    </div>
+
+                    <!-- Value -->
+                    <div>
+                        <label for="itemValue" class="block text-xs font-medium text-slate-300 mb-1">Valor Actual (€)</label>
+                        <input type="number" id="itemValue" step="0.01" min="0" required placeholder="0.00" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+
+                    <!-- Form Buttons -->
+                    <div class="flex gap-2 pt-2">
+                        <button type="submit" id="btnSubmit" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-2.5 rounded-lg shadow-md transition-all">
+                            Guardar
+                        </button>
+                        <button type="button" id="btnCancel" onclick="resetForm()" class="hidden px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold py-2.5 rounded-lg transition-all">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Items Lists -->
+            <div class="lg:col-span-8 space-y-6">
+                <!-- Assets List -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-wallet text-blue-400"></i> MIS ACTIVOS
+                        </h3>
+                        <span id="assetsBadge" class="text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20">€0,00</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-300">
+                            <thead class="text-xs uppercase bg-slate-800/50 text-slate-400 border-b border-slate-800">
+                                <tr>
+                                    <th class="py-2.5 px-3">Concepto</th>
+                                    <th class="py-2.5 px-3">Categoría</th>
+                                    <th class="py-2.5 px-3 text-right">Valor</th>
+                                    <th class="py-2.5 px-3 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assetsTableBody" class="divide-y divide-slate-800">
+                                <!-- Dynamic Assets -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Liabilities List -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-credit-card text-rose-400"></i> MIS PASIVOS (DEUDAS)
+                        </h3>
+                        <span id="liabilitiesBadge" class="text-xs font-bold text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20">€0,00</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-300">
+                            <thead class="text-xs uppercase bg-slate-800/50 text-slate-400 border-b border-slate-800">
+                                <tr>
+                                    <th class="py-2.5 px-3">Concepto</th>
+                                    <th class="py-2.5 px-3">Categoría</th>
+                                    <th class="py-2.5 px-3 text-right">Deuda</th>
+                                    <th class="py-2.5 px-3 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="liabilitiesTableBody" class="divide-y divide-slate-800">
+                                <!-- Dynamic Liabilities -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-4 mt-8 text-center text-xs text-slate-500">
+        Gestor de Patrimonio Neto &bull; Datos locales con sincronización remota opcional.
+    </footer>
+
+    <!-- Sync Settings Modal -->
+    <div id="syncSettingsModal" class="hidden fixed inset-0 z-50 bg-black/70 p-4 items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="syncSettingsTitle">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-700 rounded-lg shadow-2xl p-6">
+            <div class="flex items-center justify-between mb-5">
+                <h2 id="syncSettingsTitle" class="text-lg font-bold text-white">Sincronización con GitHub</h2>
+                <button type="button" onclick="closeSyncSettings()" class="p-2 text-slate-400 hover:text-white" aria-label="Cerrar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="syncSettingsForm" class="space-y-4">
+                <div>
+                    <label for="gistIdInput" class="block text-xs font-medium text-slate-300 mb-1">Gist ID</label>
+                    <input id="gistIdInput" type="text" required autocomplete="off" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div>
+                    <label for="githubTokenInput" class="block text-xs font-medium text-slate-300 mb-1">GitHub Token</label>
+                    <input id="githubTokenInput" type="password" required autocomplete="off" spellcheck="false" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <p class="text-xs text-amber-300">El token se almacenará sin cifrar en localStorage en este dispositivo.</p>
+                <p id="syncSettingsMessage" class="hidden text-sm" aria-live="polite"></p>
+
+                <div class="flex flex-wrap justify-end gap-2">
+                    <button type="button" onclick="removeSyncSettings()" class="px-3 py-2 text-sm text-rose-300 hover:bg-rose-500/10 rounded-lg">Desconectar</button>
+                    <button type="button" onclick="testGistConnection()" class="px-3 py-2 bg-slate-800 text-slate-200 text-sm rounded-lg">Probar conexión</button>
+                    <button type="submit" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Default initial state
+        const DEFAULT_DATA = {
+            items: [
+                { id: '1', type: 'asset', name: 'Cuenta Corriente', category: 'Cuentas / Efectivo', value: 4500 },
+                { id: '2', type: 'asset', name: 'Fondo de Inversión ETF', category: 'Inversiones', value: 12000 },
+                { id: '3', type: 'asset', name: 'Vivienda Principal', category: 'Inmuebles', value: 210000 },
+                { id: '4', type: 'liability', name: 'Hipoteca Vivienda', category: 'Hipoteca', value: 135000 },
+                { id: '5', type: 'liability', name: 'Préstamo Coche', category: 'Préstamo Personal', value: 6500 }
+            ],
+            history: [
+                { date: 'Ene 2026', netWorth: 78000 },
+                { date: 'Feb 2026', netWorth: 81500 },
+                { date: 'Mar 2026', netWorth: 85000 }
+            ]
+        };
+
+        const CATEGORIES = {
+            asset: ['Cuentas / Efectivo', 'Inversiones', 'Inmuebles', 'Criptomonedas', 'Vehículos', 'Otros Activos'],
+            liability: ['Hipoteca', 'Préstamo Personal', 'Tarjeta de Crédito', 'Otras Deudas']
+        };
+
+        // App State
+        let state = {
+            items: [],
+            history: []
+        };
+
+        let currentType = 'asset';
+        let lineChartInstance = null;
+        let donutChartInstance = null;
+
+        const GIST_API_URL = 'https://api.github.com/gists';
+        const GIST_FILE_NAME = 'patrimonio.json';
+        const SYNC_CONFIG_KEY = 'patrimonio_gist_config';
+
+        let pendingSyncData = null;
+        let syncPromise = null;
+
+        // --- Core Functions ---
+
+        // Load data from LocalStorage or Defaults
+        function loadData() {
+            const saved = localStorage.getItem('patrimonio_neto_data');
+            if (saved) {
+                try {
+                    state = JSON.parse(saved);
+                } catch (e) {
+                    console.error("Error parsing localStorage data", e);
+                    state = DEFAULT_DATA;
+                }
+            } else {
+                state = DEFAULT_DATA;
+                saveToLocalStorage();
+            }
+            render();
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('patrimonio_neto_data', JSON.stringify(state));
+        }
+
+        function getSyncConfig() {
+            try {
+                return JSON.parse(localStorage.getItem(SYNC_CONFIG_KEY)) || {};
+            } catch (error) {
+                console.error('Error al leer la configuración de sincronización', error);
+                return {};
+            }
+        }
+
+        function hasSyncConfig(config = getSyncConfig()) {
+            return Boolean(config.gistId && config.token);
+        }
+
+        function saveSyncConfig(gistId, token) {
+            localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify({
+                gistId: gistId.trim(),
+                token: token.trim()
+            }));
+        }
+
+        function getGithubHeaders(token) {
+            return {
+                Accept: 'application/vnd.github+json',
+                Authorization: `Bearer ${token}`,
+                'X-GitHub-Api-Version': '2026-03-10'
+            };
+        }
+
+        function validatePatrimonioData(data, allowEmpty = false) {
+            if (allowEmpty && data && Object.keys(data).length === 0) {
+                return null;
+            }
+
+            if (!data || !Array.isArray(data.items) || !Array.isArray(data.history)) {
+                throw new Error(`${GIST_FILE_NAME} no contiene una estructura válida.`);
+            }
+
+            return {
+                items: data.items,
+                history: data.history
+            };
+        }
+
+        async function githubRequest(config, options = {}) {
+            if (!navigator.onLine) {
+                throw new Error('No hay conexión a internet.');
+            }
+
+            let response;
+
+            try {
+                response = await fetch(`${GIST_API_URL}/${encodeURIComponent(config.gistId)}`, {
+                    ...options,
+                    headers: {
+                        ...getGithubHeaders(config.token),
+                        ...options.headers
+                    }
+                });
+            } catch (error) {
+                throw new Error('No se pudo conectar con GitHub. Los datos siguen guardados localmente.');
+            }
+
+            if (response.ok) return response.json();
+            if (response.status === 401) throw new Error('El token no es válido o ha caducado.');
+            if (response.status === 403) throw new Error('El token no tiene permiso para acceder o modificar Gists.');
+            if (response.status === 404) throw new Error('No se encontró el Gist. Comprueba su ID y los permisos del token.');
+            if (response.status === 422) throw new Error('GitHub rechazó el contenido enviado.');
+
+            throw new Error(`GitHub devolvió el error HTTP ${response.status}.`);
+        }
+
+        function setSyncStatus(status, detail = '') {
+            const statuses = {
+                local: { label: 'Solo local', color: 'bg-slate-500' },
+                loading: { label: 'Cargando...', color: 'bg-blue-400 animate-pulse' },
+                saving: { label: 'Guardando...', color: 'bg-amber-400 animate-pulse' },
+                synced: { label: 'Sincronizado', color: 'bg-emerald-400' },
+                error: { label: 'Error de conexión', color: 'bg-rose-400' }
+            };
+            const selected = statuses[status] || statuses.local;
+            const statusElement = document.getElementById('syncStatus');
+
+            document.getElementById('syncStatusText').textContent = selected.label;
+            document.getElementById('syncStatusDot').className = `w-2 h-2 rounded-full ${selected.color}`;
+            statusElement.title = detail || selected.label;
+        }
+
+        async function loadFromGist(config = getSyncConfig()) {
+            if (!hasSyncConfig(config)) {
+                setSyncStatus('local');
+                return false;
+            }
+
+            setSyncStatus('loading');
+
+            try {
+                const gist = await githubRequest(config);
+                const gistFile = gist.files?.[GIST_FILE_NAME];
+
+                if (!gistFile) throw new Error(`El Gist no contiene el archivo ${GIST_FILE_NAME}.`);
+                if (gistFile.truncated) throw new Error(`${GIST_FILE_NAME} supera el tamaño permitido para esta aplicación.`);
+
+                const remoteData = validatePatrimonioData(JSON.parse(gistFile.content), true);
+
+                if (remoteData) {
+                    state = remoteData;
+                    saveToLocalStorage();
+                    render();
+                }
+
+                setSyncStatus('synced');
+                return true;
+            } catch (error) {
+                console.error('Error de sincronización:', error);
+                setSyncStatus('error', error.message);
+                return false;
+            }
+        }
+
+        async function saveAtGist(data, config = getSyncConfig()) {
+            if (!hasSyncConfig(config)) {
+                setSyncStatus('local');
+                return false;
+            }
+
+            setSyncStatus('saving');
+            await githubRequest(config, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    files: {
+                        [GIST_FILE_NAME]: {
+                            content: JSON.stringify(data, null, 2)
+                        }
+                    }
+                })
+            });
+            setSyncStatus('synced');
+            return true;
+        }
+
+        function queueGistSave(data) {
+            if (!hasSyncConfig()) {
+                setSyncStatus('local');
+                return Promise.resolve(false);
+            }
+
+            pendingSyncData = JSON.parse(JSON.stringify(data));
+            if (syncPromise) return syncPromise;
+
+            syncPromise = (async () => {
+                let result = true;
+
+                while (pendingSyncData) {
+                    const dataToSave = pendingSyncData;
+                    pendingSyncData = null;
+
+                    try {
+                        await saveAtGist(dataToSave);
+                    } catch (error) {
+                        result = false;
+                        console.error('Error guardando en GitHub:', error);
+                        setSyncStatus('error', error.message);
+                    }
+                }
+
+                return result;
+            })().finally(() => {
+                syncPromise = null;
+            });
+
+            return syncPromise;
+        }
+
+        function persistData() {
+            saveToLocalStorage();
+            void queueGistSave(state);
+        }
+
+        function showSyncSettingsMessage(message, isError = false) {
+            const element = document.getElementById('syncSettingsMessage');
+            element.textContent = message;
+            element.className = isError ? 'text-sm text-rose-400' : 'text-sm text-emerald-400';
+        }
+
+        function openSyncSettings() {
+            const config = getSyncConfig();
+            document.getElementById('gistIdInput').value = config.gistId || '';
+            document.getElementById('githubTokenInput').value = config.token || '';
+            document.getElementById('syncSettingsMessage').classList.add('hidden');
+
+            const modal = document.getElementById('syncSettingsModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('gistIdInput').focus();
+        }
+
+        function closeSyncSettings() {
+            const modal = document.getElementById('syncSettingsModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function testGistConnection() {
+            const gistId = document.getElementById('gistIdInput').value.trim();
+            const token = document.getElementById('githubTokenInput').value.trim();
+
+            if (!gistId || !token) {
+                showSyncSettingsMessage('Introduce el Gist ID y el token.', true);
+                return false;
+            }
+
+            showSyncSettingsMessage('Comprobando conexión...');
+
+            try {
+                const gist = await githubRequest({ gistId, token });
+                const gistFile = gist.files?.[GIST_FILE_NAME];
+
+                if (!gistFile) throw new Error(`El Gist no contiene ${GIST_FILE_NAME}.`);
+                if (gistFile.truncated) throw new Error(`${GIST_FILE_NAME} es demasiado grande.`);
+
+                validatePatrimonioData(JSON.parse(gistFile.content), true);
+                showSyncSettingsMessage('Conexión correcta.');
+                return true;
+            } catch (error) {
+                showSyncSettingsMessage(error.message, true);
+                return false;
+            }
+        }
+
+        function removeSyncSettings() {
+            localStorage.removeItem(SYNC_CONFIG_KEY);
+            pendingSyncData = null;
+            setSyncStatus('local', 'Datos guardados solo en este dispositivo');
+            closeSyncSettings();
+        }
+
+        // Currency Formatter
+        function formatEUR(val) {
+            return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+        }
+
+        function render() {
+            // Calculations
+            const totalAssets = state.items
+                .filter(i => i.type === 'asset')
+                .reduce((sum, i) => sum + Number(i.value), 0);
+
+            const totalLiabilities = state.items
+                .filter(i => i.type === 'liability')
+                .reduce((sum, i) => sum + Number(i.value), 0);
+
+            const netWorth = totalAssets - totalLiabilities;
+
+            // KPI Updates
+            document.getElementById('kpiNetWorth').innerText = formatEUR(netWorth);
+            document.getElementById('kpiAssets').innerText = formatEUR(totalAssets);
+            document.getElementById('kpiLiabilities').innerText = formatEUR(totalLiabilities);
+
+            document.getElementById('assetsBadge').innerText = formatEUR(totalAssets);
+            document.getElementById('liabilitiesBadge').innerText = formatEUR(totalLiabilities);
+
+            const assetCount = state.items.filter(i => i.type === 'asset').length;
+            const liabilityCount = state.items.filter(i => i.type === 'liability').length;
+
+            document.getElementById('kpiAssetsCount').innerText = `${assetCount} activo(s) registrado(s)`;
+            document.getElementById('kpiLiabilitiesCount').innerText = `${liabilityCount} deuda(s) registrada(s)`;
+
+            // Render Tables
+            renderTables();
+
+            // Render Charts
+            renderLineChart();
+            renderDonutChart();
+        }
+
+        function renderTables() {
+            const assetsTable = document.getElementById('assetsTableBody');
+            const liabilitiesTable = document.getElementById('liabilitiesTableBody');
+
+            assetsTable.innerHTML = '';
+            liabilitiesTable.innerHTML = '';
+
+            const assets = state.items.filter(i => i.type === 'asset');
+            const liabilities = state.items.filter(i => i.type === 'liability');
+
+            if (assets.length === 0) {
+                assetsTable.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500 italic">No hay activos registrados</td></tr>`;
+            } else {
+                assets.forEach(item => {
+                    assetsTable.innerHTML += `
+                        <tr class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-3 px-3 font-medium text-white">${escapeHtml(item.name)}</td>
+                            <td class="py-3 px-3 text-xs text-slate-400"><span class="bg-slate-800 px-2 py-1 rounded border border-slate-700">${item.category}</span></td>
+                            <td class="py-3 px-3 text-right font-semibold text-emerald-400">${formatEUR(item.value)}</td>
+                            <td class="py-3 px-3 text-center">
+                                <button onclick="editItem('${item.id}')" class="text-slate-400 hover:text-blue-400 p-1 mx-0.5" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="deleteItem('${item.id}')" class="text-slate-400 hover:text-rose-400 p-1 mx-0.5" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            if (liabilities.length === 0) {
+                liabilitiesTable.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500 italic">No hay deudas registradas</td></tr>`;
+            } else {
+                liabilities.forEach(item => {
+                    liabilitiesTable.innerHTML += `
+                        <tr class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-3 px-3 font-medium text-white">${escapeHtml(item.name)}</td>
+                            <td class="py-3 px-3 text-xs text-slate-400"><span class="bg-slate-800 px-2 py-1 rounded border border-slate-700">${item.category}</span></td>
+                            <td class="py-3 px-3 text-right font-semibold text-rose-400">${formatEUR(item.value)}</td>
+                            <td class="py-3 px-3 text-center">
+                                <button onclick="editItem('${item.id}')" class="text-slate-400 hover:text-blue-400 p-1 mx-0.5" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="deleteItem('${item.id}')" class="text-slate-400 hover:text-rose-400 p-1 mx-0.5" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        function renderLineChart() {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+            
+            const labels = state.history.map(h => h.date);
+            const dataValues = state.history.map(h => h.netWorth);
+
+            if (lineChartInstance) {
+                lineChartInstance.destroy();
+            }
+
+            lineChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Patrimonio Neto (€)',
+                        data: dataValues,
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#22c55e',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + formatEUR(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { 
+                                color: '#94a3b8',
+                                callback: function(value) {
+                                    return '€' + (value >= 1000 ? (value/1000) + 'k' : value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderDonutChart() {
+            const ctx = document.getElementById('donutChart').getContext('2d');
+            const assets = state.items.filter(i => i.type === 'asset');
+
+            // Aggregate values by category
+            const categoryTotals = {};
+            assets.forEach(item => {
+                categoryTotals[item.category] = (categoryTotals[item.category] || 0) + Number(item.value);
+            });
+
+            const labels = Object.keys(categoryTotals);
+            const dataValues = Object.values(categoryTotals);
+
+            if (donutChartInstance) {
+                donutChartInstance.destroy();
+            }
+
+            if (labels.length === 0) {
+                document.getElementById('donutEmptyState').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('donutEmptyState').classList.add('hidden');
+            }
+
+            donutChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: [
+                            '#3b82f6', // blue
+                            '#10b981', // emerald
+                            '#f59e0b', // amber
+                            '#8b5cf6', // purple
+                            '#ec4899', // pink
+                            '#06b6d4'  // cyan
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#0f172a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#cbd5e1',
+                                boxWidth: 12,
+                                padding: 15,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${formatEUR(context.parsed)}`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        function setType(type) {
+            currentType = type;
+            const btnAsset = document.getElementById('btnAsset');
+            const btnLiability = document.getElementById('btnLiability');
+            const selectCategory = document.getElementById('itemCategory');
+
+            if (type === 'asset') {
+                btnAsset.className = 'py-2 px-3 text-xs font-semibold rounded-lg border bg-emerald-500/20 text-emerald-400 border-emerald-500/50 flex items-center justify-center gap-2';
+                btnLiability.className = 'py-2 px-3 text-xs font-semibold rounded-lg border border-slate-700 bg-slate-800 text-slate-400 flex items-center justify-center gap-2';
+            } else {
+                btnLiability.className = 'py-2 px-3 text-xs font-semibold rounded-lg border bg-rose-500/20 text-rose-400 border-rose-500/50 flex items-center justify-center gap-2';
+                btnAsset.className = 'py-2 px-3 text-xs font-semibold rounded-lg border border-slate-700 bg-slate-800 text-slate-400 flex items-center justify-center gap-2';
+            }
+
+            // Populate categories
+            selectCategory.innerHTML = CATEGORIES[type].map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('itemId').value;
+            const name = document.getElementById('itemName').value.trim();
+            const category = document.getElementById('itemCategory').value;
+            const value = parseFloat(document.getElementById('itemValue').value);
+
+            if (!name || isNaN(value)) return;
+
+            if (id) {
+                // Edit existing
+                const index = state.items.findIndex(i => i.id === id);
+                if (index !== -1) {
+                    state.items[index] = { id, type: currentType, name, category, value };
+                }
+            } else {
+                // Create new
+                const newItem = {
+                    id: Date.now().toString(),
+                    type: currentType,
+                    name,
+                    category,
+                    value
+                };
+                state.items.push(newItem);
+            }
+
+            persistData();
+            resetForm();
+            render();
+        }
+
+        function editItem(id) {
+            const item = state.items.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('itemId').value = item.id;
+            document.getElementById('itemName').value = item.name;
+            document.getElementById('itemValue').value = item.value;
+            setType(item.type);
+            document.getElementById('itemCategory').value = item.category;
+
+            document.getElementById('formTitle').innerHTML = `<i class="fa-solid fa-pen text-blue-400"></i> Editar Elemento`;
+            document.getElementById('btnSubmit').innerText = 'Actualizar';
+            document.getElementById('btnCancel').classList.remove('hidden');
+        }
+
+        function deleteItem(id) {
+            state.items = state.items.filter(i => i.id !== id);
+            persistData();
+            render();
+        }
+
+        function resetForm() {
+            document.getElementById('itemId').value = '';
+            document.getElementById('itemForm').reset();
+            document.getElementById('formTitle').innerHTML = `<i class="fa-solid fa-circle-plus text-emerald-400"></i> Añadir Elemento`;
+            document.getElementById('btnSubmit').innerText = 'Guardar';
+            document.getElementById('btnCancel').classList.add('hidden');
+            setType('asset');
+        }
+
+        function saveCurrentSnapshot() {
+            const totalAssets = state.items.filter(i => i.type === 'asset').reduce((sum, i) => sum + Number(i.value), 0);
+            const totalLiabilities = state.items.filter(i => i.type === 'liability').reduce((sum, i) => sum + Number(i.value), 0);
+            const netWorth = totalAssets - totalLiabilities;
+
+            const now = new Date();
+            const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+            const label = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+
+            // Check if current month already exists, update it or push new
+            const existingIndex = state.history.findIndex(h => h.date === label);
+            if (existingIndex !== -1) {
+                state.history[existingIndex].netWorth = netWorth;
+            } else {
+                state.history.push({ date: label, netWorth: netWorth });
+            }
+
+            persistData();
+            renderLineChart();
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `patrimonio_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.items && parsed.history) {
+                        state = validatePatrimonioData(parsed);
+                        persistData();
+                        render();
+                    } else {
+                        alert('El archivo JSON no tiene el formato correcto.');
+                    }
+                } catch (err) {
+                    alert('Error al leer el archivo JSON.');
+                }
+            };
+            if(event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0]);
+            }
+        }
+
+        function resetDataPrompt() {
+            if (confirm('¿Seguro que deseas borrar todos los datos y restaurar los de ejemplo?')) {
+                state = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                persistData();
+                render();
+            }
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        document.getElementById('syncSettingsForm').addEventListener('submit', async event => {
+            event.preventDefault();
+
+            const gistId = document.getElementById('gistIdInput').value.trim();
+            const token = document.getElementById('githubTokenInput').value.trim();
+            const connected = await testGistConnection();
+
+            if (connected) {
+                saveSyncConfig(gistId, token);
+                closeSyncSettings();
+                await loadFromGist({ gistId, token });
+            }
+        });
+
+        // Initialize on load
+        window.addEventListener('load', async () => {
+            setType('asset');
+            loadData();
+
+            if (hasSyncConfig()) {
+                await loadFromGist();
+            } else {
+                setSyncStatus('local', 'Datos guardados solo en este dispositivo');
+            }
+        });
+    </script>
+</body>
+</html>

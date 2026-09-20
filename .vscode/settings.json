@@ -1,0 +1,7 @@
+{
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "Generate commit messages in English using Conventional Commits. Use this format: type(scope): short imperative description. Keep the subject under 72 characters and do not add a period."
+    }
+  ]
+}

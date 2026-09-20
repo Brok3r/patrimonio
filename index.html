@@ -922,7 +922,9 @@
         function renderCategoryHistoryChart() {
             const canvas = document.getElementById('categoryHistoryChart');
             const emptyState = document.getElementById('categoryHistoryEmptyState');
-            const snapshots = state.history.filter(snapshot => snapshot.categories && Object.keys(snapshot.categories).length > 0);
+            const snapshots = state.history
+                .filter(snapshot => snapshot.categories && Object.keys(snapshot.categories).length > 0)
+                .slice(-12);
 
             if (categoryHistoryChartInstance) {
                 categoryHistoryChartInstance.destroy();
@@ -969,7 +971,7 @@
                                     const snapshot = snapshots[context.dataIndex];
                                     const totalAssets = Object.values(snapshot.categories).reduce((sum, value) => sum + Number(value), 0);
                                     const amount = Number(snapshot.categories[context.dataset.label] || 0);
-                                    return ` ${context.dataset.label}: ${context.parsed.y.toFixed(1)}% (${formatEUR(amount)} de ${formatEUR(totalAssets)})`;
+                                    return ` ${context.dataset.label}: ${context.parsed.y.toFixed(1)}% (${formatEUR(amount)})`;
                                 }
                             }
                         },

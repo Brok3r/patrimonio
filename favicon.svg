@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Patrimonio Neto</title>
+  <desc id="desc">Icono de un gráfico ascendente</desc>
+  <rect width="64" height="64" rx="14" fill="#0f172a"/>
+  <rect x="8" y="8" width="48" height="48" rx="10" fill="#10b981" fill-opacity=".12" stroke="#10b981" stroke-opacity=".35"/>
+  <path d="M18 43V21M18 43h27" fill="none" stroke="#94a3b8" stroke-linecap="round" stroke-width="4"/>
+  <path d="m23 37 8-8 6 4 9-11" fill="none" stroke="#34d399" stroke-linecap="round" stroke-linejoin="round" stroke-width="5"/>
+  <path d="M40 22h6v6" fill="none" stroke="#34d399" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+</svg>

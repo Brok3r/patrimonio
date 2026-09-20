@@ -83,8 +83,8 @@ Synchronization is optional. Once configured, the application reads and updates 
 The application needs a personal access token to read and modify the Gist.
 
 1. In GitHub, open **Settings**.
-2. Go to **Developer settings**.
-3. Open **Personal access tokens**.
+2. Go to **Credentials**.
+3. Open **Fine-grained personal access tokens**.
 4. You can create a classic token with the `gist` scope, or a fine-grained token with read and write access to Gists.
 5. Set a reasonable expiration date and generate the token.
 6. Copy the token immediately. GitHub will not show the full token again.
@@ -100,6 +100,18 @@ Do not share the token or store it in the repository.
 5. If the test succeeds, click **Save**.
 
 After saving, the application downloads the data from the Gist. Later changes are saved locally and sent to the Gist when a connection is available.
+
+### Optional local configuration file
+
+You can keep the Gist ID and token in a local file instead of entering them in the interface every time:
+
+1. Copy `config.local.example.js` to `config.local.js`.
+2. Replace `your-gist-id` and `your-github-token` with your values.
+3. Open the application normally. When both values are present, the local file is used automatically.
+
+Set `forceLocalData: true` in `config.local.js` to force local-only mode. This disables reading from and writing to GitHub while preserving the configured credentials.
+
+`config.local.js` is listed in `.gitignore` and must never be committed. The example file contains placeholders only. This keeps the credentials out of Git, but the token is still available to the browser, so use this only on a trusted device.
 
 ### Security and limitations
 
@@ -119,4 +131,4 @@ The trash button deletes the current data from local storage and restores the sa
 
 ## TODO
 
-[] ...
+[] Eliminar items y coger el último valr de history (?)

@@ -745,7 +745,7 @@
                     assetsTable.innerHTML += `
                         <tr class="hover:bg-slate-800/40 transition-colors">
                             <td class="py-3 px-3 font-medium text-white">${escapeHtml(item.name)}</td>
-                            <td class="py-3 px-3 text-xs text-slate-400"><span class="bg-slate-800 px-2 py-1 rounded border border-slate-700">${item.category}</span></td>
+                            <td class="py-3 px-3 text-xs"><span class="px-2 py-1 rounded border" style="background-color: ${CATEGORY_COLORS[item.category] || '#334155'}22; border-color: ${CATEGORY_COLORS[item.category] || '#64748b'}; color: ${CATEGORY_COLORS[item.category] || '#cbd5e1'}">${escapeHtml(item.category)}</span></td>
                             <td class="py-3 px-3 text-right font-semibold text-emerald-400">${formatEUR(item.value)}</td>
                             <td class="py-3 px-3 text-center">
                                 <button onclick="editItem('${item.id}')" class="text-slate-400 hover:text-blue-400 p-1 mx-0.5" title="Editar"><i class="fa-solid fa-pen"></i></button>
@@ -763,7 +763,7 @@
                     liabilitiesTable.innerHTML += `
                         <tr class="hover:bg-slate-800/40 transition-colors">
                             <td class="py-3 px-3 font-medium text-white">${escapeHtml(item.name)}</td>
-                            <td class="py-3 px-3 text-xs text-slate-400"><span class="bg-slate-800 px-2 py-1 rounded border border-slate-700">${item.category}</span></td>
+                            <td class="py-3 px-3 text-xs"><span class="px-2 py-1 rounded border" style="background-color: ${CATEGORY_COLORS[item.category] || '#334155'}22; border-color: ${CATEGORY_COLORS[item.category] || '#64748b'}; color: ${CATEGORY_COLORS[item.category] || '#cbd5e1'}">${escapeHtml(item.category)}</span></td>
                             <td class="py-3 px-3 text-right font-semibold text-rose-400">${formatEUR(item.value)}</td>
                             <td class="py-3 px-3 text-center">
                                 <button onclick="editItem('${item.id}')" class="text-slate-400 hover:text-blue-400 p-1 mx-0.5" title="Editar"><i class="fa-solid fa-pen"></i></button>
